@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "A next-generation 3D shopping experience powered by intelligent design and interactive interfaces.",
   "workspaces": [
-    "frontend",
-    "backend"
+    "client",
+    "server"
   ],
   "license": "MIT",
   "private": true
