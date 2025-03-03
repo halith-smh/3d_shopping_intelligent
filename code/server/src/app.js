@@ -7,6 +7,7 @@ import { ApiResponse } from "./utils/ApiResponse.js";
 import authRouter from "./routes/auth.routes.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { NODE_ENV } from "./config/env.js";
+import { authorize } from "./middlewares/auth.middleware.js";
 
 const app = express();
 
@@ -25,7 +26,7 @@ app.use("/api/v1/auth", authRouter);
 // ErrorHandler Middleware
 app.use(errorHandler);
 
-app.get("/", (req, res) => {
+app.get("/", authorize,(req, res) => {
   res.json(new ApiResponse(200,{status: "active", log: new Date()},"Site is running properly"));
 });
 
