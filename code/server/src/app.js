@@ -8,6 +8,7 @@ import authRouter from "./routes/auth.routes.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { NODE_ENV } from "./config/env.js";
 import { authorize } from "./middlewares/auth.middleware.js";
+import userRouter from "./routes/user.routes.js";
 
 const app = express();
 
@@ -17,11 +18,19 @@ app.use(express.json());
 app.use(express.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(morgan(NODE_ENV));
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PATCH"],
+    credentials: true,
+  })
+);
 // - Rate Limiting : production env
 
-// App Roues
+// App Routes
 app.use("/api/v1/auth", authRouter);
+// User Routes
+app.use("/api/v1/user", userRouter);
 
 // ErrorHandler Middleware
 app.use(errorHandler);

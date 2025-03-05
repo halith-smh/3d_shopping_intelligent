@@ -1,8 +1,8 @@
 import React from 'react'
 
-const AuthButton = ({text}) => {
+const AuthButton = ({text, isDisabled}) => {
   return (
-    <button type="submit" className='bg-primary my-2 w-full rounded-md text-white font-bold text-xl p-2'>{text}</button>
+    <button type="submit" disabled={isDisabled} className='bg-primary my-2 w-full rounded-md text-white font-semibold text-lg p-2 disabled:opacity-60'>{text}</button>
   )
 }
 
