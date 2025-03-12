@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import json
 import os
+from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_pinecone import PineconeVectorStore
 from langchain_core.prompts import ChatPromptTemplate
@@ -10,8 +11,10 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
 # Environment variables - in production, use proper env management
-os.environ["PINECONE_API_KEY"] = "pcsk_4rzrQE_HTDPJwHxBjog2AD6w9AauyXFyP3TVXq9UHxsb3GN6CExitJrJ6hRBP975Rnzn2S"
-os.environ["GROQ_API_KEY"] = "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"
+load_dotenv()
+
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Constants
 PINECONE_INDEX_NAME = "product-index1"
