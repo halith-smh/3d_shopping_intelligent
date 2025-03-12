@@ -35,14 +35,20 @@ const Home = () => {
         verifyHomePage();
     }, []);
 
-    
+    const logOut = () => {
+        localStorage.removeItem('token'); nav('/login'); toast.success('Logout Successful')
+    }
+
     return (
         <BgImage>
             <div className='p-0 m-0 h-screen w-screen'>
                 <Loader />
                 <Leva collapsed />
                 <div className='absolute top-6 right-4 z-50'>
-                    <button onClick={() => {localStorage.removeItem('token'); nav('/login'); toast.success('Logout Successful')}} title='Logout' className='bg-dark rounded-md text-2xl p-2 text-white cursor-pointer'><TbLogout/></button>
+                    <button onClick={logOut} title='Logout' className='bg-dark rounded-md text-2xl p-2 text-white cursor-pointer'><TbLogout /></button>
+                </div>
+                <div className='absolute top-6 left-4 z-50'>
+                    <div className='bg-dark rounded-md text-lg py-2 px-4 text-white cursor-pointer'>🤖 3D Shopping Intelligent</div>
                 </div>
                 {/* <ChatInterface /> */}
                 <Canvas shadows camera={{ position: [0, 0, 0], fov: 10 }}>

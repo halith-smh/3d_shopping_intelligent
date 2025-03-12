@@ -1,11 +1,39 @@
 
-import React, { useRef } from 'react'
-import { useGLTF } from '@react-three/drei'
+import React, { useEffect, useRef, useState } from 'react'
+import { useGLTF , useAnimations} from '@react-three/drei'
 
 export function Model(props) {
-  const { nodes, materials } = useGLTF('/model/avatar.glb')
+  const { nodes, materials } = useGLTF('/model/avatar.glb');
+  const { animations } = useGLTF("/model/animations.glb");
+
+  // For Animating Avatar - Model
+  const group = useRef();
+  const { actions, mixer } = useAnimations(animations, group);
+  const [animation, setAnimation] = useState(animations.find((a) => a.name === "Standing Idle") ? "Standing Idle" : animations[0].name);
+
+  // useEffect(() => {
+  //   actions[animation].reset().fadeIn(mixer.stats.actions.inUse === 0 ? 0 : 0.5).play();
+  //   return () => actions[animation].fadeOut(0.5);
+  // }, [animation]);
+  
+  useEffect(() => {
+    if (!actions || !actions[animation]) return;
+    
+    actions[animation]
+      .reset()
+      .fadeIn(mixer.stats.actions.inUse === 0 ? 0 : 0.5)
+      .play();
+      
+    return () => {
+      if (actions[animation]) {
+        actions[animation].fadeOut(0.5);
+      }
+    }
+  }, [animation, actions, mixer]);
+  
+
   return (
-    <group {...props} dispose={null} position={[0, -0.35, 0]}>
+    <group ref={group} {...props} dispose={null} position={[-0.06, -0.38, 0]}>
       <primitive object={nodes.Hips} />
       <skinnedMesh
         name="EyeLeft"
