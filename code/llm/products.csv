@@ -1,0 +1,26 @@
+Product_ID,Category,Brand,Model,Description,MRP,Discount,Stock,Warranty,Rating
+1,Laptop,Apple,MacBook Pro 14,"M3 chip, 16GB RAM, 512GB SSD",219990,5%,50,2 years,4.8
+2,Smartphone,Samsung,Galaxy S24 Ultra,"200MP camera, Snapdragon 8 Gen 3",134999,8%,100,1 year,4.7
+3,Headphones,Sony,WH-1000XM5,Noise-cancelling wireless headphones,34990,12%,75,1 year,4.6
+4,Smartwatch,Apple,Watch Ultra 2,"Titanium case, Depth gauge",89900,0%,30,1 year,4.5
+5,Tablet,Microsoft,Surface Pro 9,"13' 120Hz display, 5G support",124999,7%,40,2 years,4.4
+6,Camera,Canon,EOS R6 Mark II,24.2MP full-frame mirrorless,219999,10%,25,1 year,4.7
+7,Printer,HP,Smart Tank 580,Wireless all-in-one printer,18990,15%,60,1 year,4.3
+8,Monitor,Dell,UltraSharp 32,4K USB-C Hub Monitor,87999,5%,45,3 years,4.6
+9,Router,TP-Link,Archer AXE75,Wi-Fi 6E Tri-Band Router,14999,20%,80,1 year,4.2
+10,SSD,Samsung,990 Pro,2TB NVMe Gen4 SSD,23999,12%,100,5 years,4.8
+11,Speaker,JBL,PartyBox 310,Portable Bluetooth Speaker,64990,10%,30,1 year,4.4
+12,Keyboard,Logitech,MX Mechanical,Wireless Illuminated Keyboard,14990,5%,90,2 years,4.5
+13,Mouse,Razer,DeathAdder V3,Ergonomic Gaming Mouse,8999,15%,120,2 years,4.6
+14,TV,LG,C3 65,OLED evo 4K Smart TV,209999,8%,25,1 year,4.7
+15,AC,Lloyd,1.5 Ton 3 Star,Inverter Split AC,44990,18%,40,1 year,4.3
+16,Refrigerator,Samsung,678L French Door,AI Convertible 5-in-1,134999,12%,20,1 year,4.5
+17,Drone,DJI,Mini 4 Pro,4K HDR Quadcopter,109999,5%,15,1 year,4.6
+18,Earphones,OnePlus,Buds Pro 2,Active Noise Cancellation,11999,25%,200,1 year,4.4
+19,Projector,Epson,CO-FH02,Full HD 3LCD,64990,10%,35,2 years,4.1
+20,GPU,NVIDIA,RTX 4090,24GB GDDR6X,164999,0%,10,3 years,4.9
+21,Power Bank,Anker,737,140W 24000mAh,14999,20%,150,18 months,4.7
+22,Smart Lock,Godrej,Yale Next,Wi-Fi Enabled Digital Lock,22990,10%,50,1 year,4.0
+23,VR Headset,Meta,Quest 3,128GB Mixed Reality,62999,5%,25,1 year,4.3
+24,Calculator,Casio,fx-991EX,Scientific Calculator,1999,5%,300,3 years,4.6
+25,Microwave,IFB,25SC4,Convection Microwave Oven,21990,15%,60,2 years,4.2

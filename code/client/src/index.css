@@ -6,3 +6,8 @@
 body{
     font-family: "Inter", sans-serif;
 }
+
+.leva {
+    z-index: 99999999 !important;
+    position: absolute !important;
+}

@@ -9,6 +9,7 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 import { NODE_ENV } from "./config/env.js";
 import { authorize } from "./middlewares/auth.middleware.js";
 import userRouter from "./routes/user.routes.js";
+import llmRouter from "./routes/llm.routes.js";
 
 const app = express();
 
@@ -31,6 +32,8 @@ app.use(
 app.use("/api/v1/auth", authRouter);
 // User Routes
 app.use("/api/v1/user", userRouter);
+// llm response
+app.use("/api/v1/llm", llmRouter);
 
 // ErrorHandler Middleware
 app.use(errorHandler);
