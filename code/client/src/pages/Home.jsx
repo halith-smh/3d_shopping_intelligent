@@ -43,7 +43,7 @@ const Home = () => {
         <BgImage>
             <div className='p-0 m-0 h-screen w-screen'>
                 <Loader />
-                <Leva collapsed />
+                <Leva collapsed/>
                 <div className='absolute top-6 right-4 z-50'>
                     <button onClick={logOut} title='Logout' className='bg-dark rounded-md text-2xl p-2 text-white cursor-pointer'><TbLogout /></button>
                 </div>

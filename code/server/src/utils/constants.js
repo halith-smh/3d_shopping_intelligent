@@ -1,0 +1,1 @@
+export const LLM_URI = "http://localhost:4001/api/llm/response";

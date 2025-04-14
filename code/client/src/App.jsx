@@ -14,7 +14,7 @@ const App = () => {
 
       <Route path='/' element={<Home/>}></Route>
 
-      <Route path="*" element={<h1>Not Found</h1>} />
+      <Route path="*" element={<h1 className='text-3xl p-8'>404: Not Found :(</h1>} />
     </Routes>
     </BrowserRouter>
   )
