@@ -2,16 +2,16 @@ import { Loader } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber';
 import { Leva } from 'leva';
 import { BgImage, Scenario } from '../components';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../utils/axiosInstance';
 import { TbLogout } from 'react-icons/tb';
 import toast from 'react-hot-toast';
-
+import ChatInterface from '../components/Home/ChatInterface';
 
 const Home = () => {
-
     const nav = useNavigate();
+    const [messageQueue, setMessageQueue] = useState([]);
 
     const verifyHomePage = async () => {
         const token = localStorage.getItem('token');
@@ -36,8 +36,15 @@ const Home = () => {
     }, []);
 
     const logOut = () => {
-        localStorage.removeItem('token'); nav('/login'); toast.success('Logout Successful')
+        localStorage.removeItem('token'); 
+        nav('/login'); 
+        toast.success('Logout Successful');
     }
+
+    // Handle responses from the chat interface
+    const handleChatResponse = (messages) => {
+        setMessageQueue(messages);
+    };
 
     return (
         <BgImage>
@@ -50,14 +57,13 @@ const Home = () => {
                 <div className='absolute top-6 left-4 z-50'>
                     <div className='bg-dark rounded-md text-lg py-2 px-4 text-white cursor-pointer'>🤖 3D Shopping Intelligent</div>
                 </div>
-                {/* <ChatInterface /> */}
+                <ChatInterface onResponse={handleChatResponse} />
                 <Canvas shadows camera={{ position: [0, 0, 0], fov: 10 }}>
-                    <Scenario />
+                    <Scenario messageQueue={messageQueue} />
                 </Canvas>
             </div>
         </BgImage>
+    );
+};
 
-    )
-}
-
-export default Home
+export default Home;
