@@ -8,8 +8,8 @@ import facialExpressions from '../../utils/facialExpressions';
 import visemesMapping from '../../utils/visemesMapping';
 
 export function Model(props) {
-  const { nodes, materials } = useGLTF('/model/avatar.glb');
-  const { animations } = useGLTF("/model/animations.glb");
+  const { nodes, materials } = useGLTF('/model/avatar2.glb');
+  const { animations } = useGLTF("/model/animations2.glb");
 
   const logAnimations = (animations) => {
     console.group("Available Animations");
@@ -20,60 +20,60 @@ export function Model(props) {
       "First Track": anim.tracks[0]?.name || "N/A"
     })));
     console.groupEnd();
-    
+
     // For more detailed inspection
     console.log("Full Animation Data:", animations);
   };
-  
+
   // Then use it in your useEffect
   useEffect(() => {
     logAnimations(animations);
   }, [animations]);
-  
+
   // For Animating Avatar - Model
   const group = useRef();
   const { actions, mixer } = useAnimations(animations, group);
   const [animation, setAnimation] = useState(animations.find((a) => a.name === "Standing Idle") ? "Standing Idle" : animations[0].name);
-  
+
   // For lipsync animation
   const [lipSyncData, setLipSyncData] = useState(null);
   const [audioElement, setAudioElement] = useState(null);
   const [currentMouthCue, setCurrentMouthCue] = useState("X");
   const [audioStartTime, setAudioStartTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  
+
   // For facial expressions
   const [currentFacialExpression, setCurrentFacialExpression] = useState("neutral");
   const [currentMessage, setCurrentMessage] = useState(null);
-  
+
   // blink to control the eyes' state
   const [blink, setBlink] = useState(false);
   const { scene } = useThree();
   const idleTimeoutRef = useRef(null);
-  
+
   // Track whether we are in the first frame after animation/expression changes
   const firstFrameRef = useRef(true);
-  
+
   // Handle lip sync animation during playback
   useFrame(() => {
     // Handle eye blinking
     lerpMorphTarget("eyeBlinkLeft", blink ? 1 : 0, 0.5);
     lerpMorphTarget("eyeBlinkRight", blink ? 1 : 0, 0.5);
-    
+
     // Apply facial expression every frame to ensure it's active
     if (currentFacialExpression && facialExpressions[currentFacialExpression]) {
       applyFacialExpression(currentFacialExpression);
     }
-    
+
     // Handle lip sync if audio is playing
     if (lipSyncData && audioElement && isPlaying) {
       const currentTime = audioElement.currentTime;
-      
+
       // Find the current mouth cue based on the current time
       const currentCue = lipSyncData.mouthCues.find(
         cue => currentTime >= cue.start && currentTime <= cue.end
       );
-      
+
       if (currentCue && currentCue.value !== currentMouthCue) {
         setCurrentMouthCue(currentCue.value);
         applyMouthShape(currentCue.value);
@@ -85,7 +85,7 @@ export function Model(props) {
       firstFrameRef.current = false;
     }
   });
-  
+
   // Eye blinking effect
   useEffect(() => {
     let blinkTimeout;
@@ -101,36 +101,36 @@ export function Model(props) {
     nextBlink();
     return () => clearTimeout(blinkTimeout);
   }, []);
-  
+
   // Animation effect - handle animation changes
   useEffect(() => {
     if (!actions || !actions[animation]) {
       console.warn(`Animation "${animation}" not found`);
       return;
     }
-    
+
     // Stop any previous animations
     Object.values(actions).forEach(action => {
       if (action.isRunning()) {
         action.fadeOut(0.5);
       }
     });
-    
+
     // Start the new animation with immediate response for first frame
     actions[animation]
       .reset()
       .fadeIn(0.5)
       .play();
-    
+
     console.log(`Playing animation: ${animation}`);
-    
+
     return () => {
       if (actions[animation]) {
         actions[animation].fadeOut(0.5);
       }
     };
   }, [animation, actions]);
-  
+
   // Apply facial expression when it changes
   useEffect(() => {
     if (currentFacialExpression && facialExpressions[currentFacialExpression]) {
@@ -139,21 +139,21 @@ export function Model(props) {
       applyFacialExpression(currentFacialExpression);
     }
   }, [currentFacialExpression]);
-  
+
   // Handle audio playback and reset
   useEffect(() => {
     if (!audioElement) return;
-    
+
     const handlePlay = () => {
       setIsPlaying(true);
       setAudioStartTime(Date.now());
       console.log("Audio playback started");
     };
-    
+
     const handleEnded = () => {
       setIsPlaying(false);
       resetMouthShape();
-      
+
       // Set a timeout to return to idle state after a brief pause
       clearTimeout(idleTimeoutRef.current);
       idleTimeoutRef.current = setTimeout(() => {
@@ -161,24 +161,24 @@ export function Model(props) {
         setCurrentFacialExpression("neutral");
         setCurrentMessage(null);
       }, 1000);
-      
+
       console.log("Audio playback ended, resetting to idle");
     };
-    
+
     audioElement.addEventListener('play', handlePlay);
     audioElement.addEventListener('ended', handleEnded);
-    
+
     return () => {
       audioElement.removeEventListener('play', handlePlay);
       audioElement.removeEventListener('ended', handleEnded);
     };
   }, [audioElement]);
-  
+
   // Apply smooth transitions to morph targets
   const lerpMorphTarget = (target, value, speed = 0.1) => {
     // Use a higher speed for the first frame after a change
     const effectiveSpeed = firstFrameRef.current ? 0.5 : speed;
-    
+
     scene.traverse((child) => {
       if (child.isSkinnedMesh && child.morphTargetDictionary) {
         const index = child.morphTargetDictionary[target];
@@ -189,7 +189,7 @@ export function Model(props) {
       }
     });
   };
-  
+
   // Reset all morph targets to zero
   const resetMorphTargets = () => {
     scene.traverse((child) => {
@@ -200,19 +200,19 @@ export function Model(props) {
       }
     });
   };
-  
+
   // Apply mouth shapes for lipsync
   const applyMouthShape = (shape) => {
     // Reset all visemes first
     Object.values(visemesMapping).forEach(viseme => {
       lerpMorphTarget(viseme, 0, 0.3);
     });
-    
+
     // Apply the current viseme
     const viseme = visemesMapping[shape] || visemesMapping['X'];
     lerpMorphTarget(viseme, 1.0, 0.3);
   };
-  
+
   // Reset mouth shape
   const resetMouthShape = () => {
     Object.values(visemesMapping).forEach(viseme => {
@@ -220,15 +220,15 @@ export function Model(props) {
     });
     setCurrentMouthCue("X");
   };
-  
+
   // Apply facial expression based on the provided expression name
   const applyFacialExpression = (expressionName) => {
     const expression = facialExpressions[expressionName];
     if (!expression) return;
-    
+
     // Reset other facial expressions that might conflict
     resetFacialExpressions();
-    
+
     // Apply each morph target from the facial expression
     Object.entries(expression).forEach(([target, value]) => {
       if (target !== "eyeBlinkLeft" && target !== "eyeBlinkRight") {
@@ -236,7 +236,7 @@ export function Model(props) {
       }
     });
   };
-  
+
   // Reset facial expressions
   const resetFacialExpressions = () => {
     // Reset all facial expression morph targets except eye blink
@@ -248,31 +248,31 @@ export function Model(props) {
         }
       });
     });
-    
+
     facialTargets.forEach(target => {
       lerpMorphTarget(target, 0, 0.3);
     });
   };
-  
+
   // Process message data from the backend
   const processMessage = (message) => {
     // Cancel any pending reset to idle
     clearTimeout(idleTimeoutRef.current);
-    
+
     // Store the current message
     setCurrentMessage(message);
-    
+
     console.log("Processing message:", message);
-    
+
     // Mark as first frame for immediate response
     firstFrameRef.current = true;
-    
+
     // Set facial expression if provided
     if (message.facialExpression) {
       console.log(`Setting facial expression: ${message.facialExpression}`);
       setCurrentFacialExpression(message.facialExpression);
     }
-    
+
     // Set animation if provided
     if (message.animation && actions[message.animation]) {
       console.log(`Setting animation: ${message.animation}`);
@@ -280,13 +280,13 @@ export function Model(props) {
     } else if (message.animation) {
       console.warn(`Animation not found: ${message.animation}`);
     }
-    
+
     // Handle audio and lipsync
     if (message.audio && message.lipsync) {
       playAudioWithLipsync(message.audio, message.lipsync);
     }
   };
-  
+
   // Play audio with lipsync
   const playAudioWithLipsync = (audioData, lipsyncData) => {
     // Stop any previous audio
@@ -294,17 +294,17 @@ export function Model(props) {
       audioElement.pause();
       audioElement.removeAttribute('src');
     }
-    
+
     // Convert base64 audio to blob
     const audioBlob = base64ToBlob(audioData, 'audio/mpeg');
     const audioUrl = URL.createObjectURL(audioBlob);
-    
+
     // Create and play audio element
     const audio = new Audio(audioUrl);
     audio.volume = 1.0;
     setAudioElement(audio);
     setLipSyncData(lipsyncData);
-    
+
     // Start playback immediately after settings are applied
     setTimeout(() => {
       audio.play()
@@ -316,13 +316,13 @@ export function Model(props) {
           // If audio fails, still trigger animation and expression
           setIsPlaying(true);
           setAudioStartTime(Date.now());
-          
+
           // Auto-reset after the expected duration
           const duration = lipsyncData?.metadata?.duration || 3;
           setTimeout(() => {
             setIsPlaying(false);
             resetMouthShape();
-            
+
             clearTimeout(idleTimeoutRef.current);
             idleTimeoutRef.current = setTimeout(() => {
               setAnimation("Standing Idle");
@@ -333,49 +333,49 @@ export function Model(props) {
         });
     }, 50); // Small delay to ensure other state changes are processed first
   };
-  
+
   // Utility to convert base64 to blob
   const base64ToBlob = (base64, mimeType) => {
     const byteCharacters = atob(base64);
     const byteArrays = [];
-    
+
     for (let offset = 0; offset < byteCharacters.length; offset += 512) {
       const slice = byteCharacters.slice(offset, offset + 512);
-      
+
       const byteNumbers = new Array(slice.length);
       for (let i = 0; i < slice.length; i++) {
         byteNumbers[i] = slice.charCodeAt(i);
       }
-      
+
       const byteArray = new Uint8Array(byteNumbers);
       byteArrays.push(byteArray);
     }
-    
+
     return new Blob(byteArrays, { type: mimeType });
   };
-  
+
   // Reset everything when component unmounts
   useEffect(() => {
     return () => {
       clearTimeout(idleTimeoutRef.current);
-      
+
       if (audioElement) {
         audioElement.pause();
         audioElement.removeAttribute('src');
       }
-      
+
       resetMorphTargets();
       resetMouthShape();
       resetFacialExpressions();
     };
   }, []);
-  
+
   // Expose the processMessage function to the parent component
   React.useImperativeHandle(props.modelRef, () => ({
     processMessage,
     resetToIdle: () => {
       setAnimation("Standing Idle");
-      setCurrentFacialExpression("neutral");
+      setCurrentFacialExpression("default");
       resetMouthShape();
       if (audioElement) {
         audioElement.pause();
@@ -436,7 +436,7 @@ export function Model(props) {
       />
       <skinnedMesh
         geometry={nodes.Wolf3D_Outfit_Footwear.geometry}
-        material={materials['aleksandr@readyplayer']}
+        material={materials.Wolf3D_Outfit_Footwear}
         skeleton={nodes.Wolf3D_Outfit_Footwear.skeleton}
       />
       <skinnedMesh
@@ -448,5 +448,5 @@ export function Model(props) {
   );
 }
 
-useGLTF.preload('/model/avatar.glb');
-useGLTF.preload('/model/animations.glb');
+useGLTF.preload('/model/avatar2.glb');
+useGLTF.preload('/model/animations2.glb');

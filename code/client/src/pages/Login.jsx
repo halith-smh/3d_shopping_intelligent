@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react'
-import { AuthButton, AuthInput, BgImage, AuthHeader, AuthFooter } from '../components'
+import React, { useEffect, useState } from 'react';
+import { AuthButton, AuthInput, BgImage, AuthHeader, AuthFooter } from '../components';
 import toast from 'react-hot-toast';
 import axiosInstance from '../utils/axiosInstance';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { FiMail, FiLock, FiLogIn } from 'react-icons/fi';
+import { RiLoginCircleLine } from 'react-icons/ri';
 
 const Login = () => {
-
   const nav = useNavigate();
-
   const [isToken, setToken] = useState(true);
 
   useEffect(() => {
@@ -39,7 +40,6 @@ const Login = () => {
     const SignInloader = toast.loading('Loading...');
     try {
       const response = await axiosInstance.post("/api/v1/auth/sign-in", user);
-      // console.log(response);
       if (response.status === 200) {
         toast.dismiss(SignInloader);
         toast.success(response.data.message);
@@ -59,24 +59,108 @@ const Login = () => {
     }
   }
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { 
+        duration: 0.5,
+        when: "beforeChildren",
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      transition: { duration: 0.5 }
+    }
+  };
 
   return (
     <>
-      {!isToken && <BgImage>
-        <div className="h-screen flex justify-center items-center">
-          <div className="bg-white w-full m-8 p-6 md:w-[450px] rounded-xl">
-            <AuthHeader title="Login" p="Don't have an account?" span="Sign Up" to="/sign-up" />
-            <form onSubmit={handleFormSubmit}>
-              <AuthInput id="email" type="email" label="Email" placeholder="Enter your email" value={user.email} handleInputChange={handleInputChange} />
-              <AuthInput id="password" type="password" label="Password" placeholder="Enter your password" value={user.password} handleInputChange={handleInputChange} />
-              <AuthFooter />
-              <AuthButton isDisabled={isDisabled} setDisabled={setDisabled} text="Log In" />
-            </form>
+      {!isToken && (
+        <BgImage>
+          <div className="h-screen flex justify-center items-center">
+            <motion.div 
+              className="bg-white w-full m-8 p-8 md:w-[500px] rounded-2xl shadow-xl"
+              initial="hidden"
+              animate="visible"
+              variants={containerVariants}
+            >
+              <motion.div variants={itemVariants}>
+                <div className="flex justify-center mb-6">
+                  <RiLoginCircleLine className="text-primary text-6xl" />
+                </div>
+                <AuthHeader title="Welcome Back" p="Don't have an account?" span="Sign Up" to="/sign-up" />
+              </motion.div>
+              
+              <form onSubmit={handleFormSubmit}>
+                <motion.div variants={itemVariants}>
+                  <div className="relative">
+                    <FiMail className="absolute top-12 left-3 text-gray-400" />
+                    <AuthInput 
+                      id="email" 
+                      type="email" 
+                      label="Email" 
+                      placeholder="Enter your email" 
+                      value={user.email} 
+                      handleInputChange={handleInputChange}
+                      className="pl-10" 
+                    />
+                  </div>
+                </motion.div>
+                
+                <motion.div variants={itemVariants}>
+                  <div className="relative">
+                    <FiLock className="absolute top-12 left-3 text-gray-400" />
+                    <AuthInput 
+                      id="password" 
+                      type="password" 
+                      label="Password" 
+                      placeholder="Enter your password" 
+                      value={user.password} 
+                      handleInputChange={handleInputChange}
+                      className="pl-10" 
+                    />
+                  </div>
+                </motion.div>
+                
+                {/* <motion.div variants={itemVariants}>
+                  <div className="flex justify-between items-center mb-4">
+                    <AuthFooter />
+                    <a href="#" className="text-primary text-sm font-medium hover:underline">Forgot Password?</a>
+                  </div>
+                </motion.div> */}
+                
+                <motion.div 
+                  variants={itemVariants}
+                  whileHover={{ scale: isDisabled ? 1 : 1.03 }}
+                  whileTap={{ scale: isDisabled ? 1 : 0.98 }}
+                >
+                  <AuthButton 
+                    isDisabled={isDisabled} 
+                    setDisabled={setDisabled} 
+                    text={
+                      <div className="flex items-center justify-center gap-2">
+                        <FiLogIn className="text-lg" />
+                        <span>Log In</span>
+                      </div>
+                    } 
+                  />
+                </motion.div>
+                
+              </form>
+            </motion.div>
           </div>
-        </div>
-      </BgImage>}
+        </BgImage>
+      )}
     </>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

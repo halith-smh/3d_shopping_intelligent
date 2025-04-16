@@ -1,12 +1,144 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axiosInstance from '../../utils/axiosInstance';
 import toast from 'react-hot-toast';
+import { FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
+import { IoSend } from 'react-icons/io5';
 
 const ChatInterface = ({ onResponse }) => {
     const [loading, setLoading] = useState(false);
-    const [messages, setMessages] = useState([]);
     const inputRef = useRef(null);
     const [recording, setRecording] = useState(false);
+    const recognitionRef = useRef(null);
+    const [micPermission, setMicPermission] = useState(null);
+
+    // Check for microphone permission on component mount
+    useEffect(() => {
+        checkMicrophonePermission();
+    }, []);
+
+    const checkMicrophonePermission = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // If we get here, permission was granted
+            setMicPermission(true);
+            
+            // Clean up the stream
+            stream.getTracks().forEach(track => track.stop());
+        } catch (err) {
+            console.error("Microphone permission error:", err);
+            setMicPermission(false);
+        }
+    };
+
+    // Initialize speech recognition
+    const initSpeechRecognition = () => {
+        // Check browser compatibility
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            toast.error('Speech recognition is not supported in your browser');
+            return false;
+        }
+
+        // Check for microphone permission first
+        if (micPermission === false) {
+            toast.error('Microphone access is required for speech recognition');
+            return false;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+
+        // Configure recognition
+        recognition.continuous = false;
+        recognition.interimResults = true; // Get interim results for better feedback
+        recognition.lang = 'en-US';
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+            setRecording(true);
+            toast('Listening...', { 
+                icon: '🎤',
+                duration: 3000 
+            });
+        };
+
+        recognition.onresult = (event) => {
+            const transcript = Array.from(event.results)
+                .map(result => result[0].transcript)
+                .join('');
+                
+            // Update input field in real-time with transcription
+            if (inputRef.current) {
+                inputRef.current.value = transcript;
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            
+            // Handle different error types
+            switch(event.error) {
+                case 'network':
+                    toast.error('Network error: Please check your internet connection');
+                    break;
+                case 'not-allowed':
+                case 'permission-denied':
+                    toast.error('Microphone access denied. Please allow microphone access.');
+                    setMicPermission(false);
+                    break;
+                case 'no-speech':
+                    toast('No speech detected. Please try again.', { icon: '🔇' });
+                    break;
+                case 'aborted':
+                    // User or system aborted - no need for error message
+                    break;
+                default:
+                    toast.error(`Recognition error: ${event.error}`);
+            }
+            
+            setRecording(false);
+        };
+
+        recognition.onend = () => {
+            setRecording(false);
+            // Only auto-send if there's actual text and it was successful
+            if (inputRef.current?.value.trim() && micPermission !== false) {
+                sendMessage();
+            }
+        };
+
+        recognitionRef.current = recognition;
+        return true;
+    };
+
+    const toggleRecording = async () => {
+        if (recording) {
+            // Stop recording
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+            setRecording(false);
+            return;
+        }
+        
+        // If mic permission is unknown, check it first
+        if (micPermission === null) {
+            await checkMicrophonePermission();
+        }
+        
+        // Initialize recognition if needed
+        if (!recognitionRef.current && !initSpeechRecognition()) {
+            return;
+        }
+        
+        try {
+            // Start recognition
+            recognitionRef.current.start();
+        } catch (error) {
+            console.error('Error starting speech recognition:', error);
+            toast.error('Could not start speech recognition. Please try again.');
+            setRecording(false);
+        }
+    };
 
     const sendMessage = async () => {
         const message = inputRef.current.value.trim();
@@ -14,8 +146,6 @@ const ChatInterface = ({ onResponse }) => {
 
         try {
             setLoading(true);
-            // Add user message to chat
-            setMessages(prev => [...prev, { sender: 'user', text: message }]);
             
             // Clear input
             inputRef.current.value = '';
@@ -32,18 +162,31 @@ const ChatInterface = ({ onResponse }) => {
             );
 
             // Process response
-            if (data.statusCode === 200 && data.data.messages) {
-                // Add response messages to chat
-                const responseMessages = data.data.messages.map(msg => ({
-                    sender: 'bot',
-                    ...msg
-                }));
+            if (data.statusCode === 200) {
+                // Format messages to ensure they have the required properties
+                const formattedMessages = (data.data.messages || []).filter(msg => msg).map(msg => {
+                    // Ensure each message has at least a text property
+                    return {
+                        ...msg,
+                        text: msg.text || msg.content || message,
+                        // Add a default lipsync duration if not provided
+                        lipsync: msg.lipsync || { metadata: { duration: 5 } }
+                    };
+                });
                 
-                setMessages(prev => [...prev, ...responseMessages]);
+                // Format products data if available
+                const formattedProducts = (data.data.products || []).filter(p => p).map(product => {
+                    return {
+                        ...product,
+                        // Ensure price is a number
+                        price: typeof product.price === 'number' ? product.price : 
+                               typeof product.price === 'string' ? parseInt(product.price, 10) || 10000 : 10000
+                    };
+                });
                 
-                // Pass responses to parent component to control the 3D model
+                // Pass responses to parent component to control the 3D model and products
                 if (onResponse) {
-                    onResponse(data.data.messages);
+                    onResponse(formattedMessages, formattedProducts);
                 }
             }
         } catch (error) {
@@ -54,54 +197,27 @@ const ChatInterface = ({ onResponse }) => {
         }
     };
 
-    const toggleRecording = () => {
-        // Voice recording functionality would go here
-        setRecording(!recording);
-        toast.info(recording ? 'Recording stopped' : 'Recording started');
-    };
-
     return (
-        <div className="fixed top-0 left-0 right-0 bottom-0 z-10 flex justify-between p-4 flex-col pointer-events-none">
-            {/* Chat messages display */}
-            <div className="w-full flex flex-col items-end justify-center gap-4 overflow-auto max-h-[calc(100vh-100px)] pb-4">
-                {/* {messages.map((msg, index) => (
-                    <div 
-                        key={index} 
-                        className={`pointer-events-auto p-3 rounded-lg backdrop-blur-md max-w-[80%] ${
-                            msg.sender === 'user' 
-                                ? 'bg-blue-500 bg-opacity-70 text-white self-end' 
-                                : 'bg-white bg-opacity-70 text-gray-800 self-start'
-                        }`}
-                    >
-                        {msg.text}
-                    </div>
-                ))} */}
-            </div>
-            
-            {/* Input area */}
-            <div className="flex items-center gap-2 pointer-events-auto max-w-screen-sm w-full mx-auto">
+        <div className="bg-black/30 backdrop-blur-lg p-4">
+            <div className="flex items-center gap-2 max-w-3xl mx-auto">
                 <button
                     onClick={toggleRecording}
-                    className={`${recording ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-500 hover:bg-gray-600'} text-white p-4 px-4 font-semibold uppercase rounded-md`}
+                    className={`${
+                        recording 
+                            ? 'bg-red-500 hover:bg-red-600' 
+                            : micPermission === false
+                                ? 'bg-gray-400'
+                                : 'bg-gray-700 hover:bg-gray-800'
+                    } text-white p-3 rounded-full transition-all flex-shrink-0 shadow-md`}
+                    disabled={micPermission === false}
+                    title={micPermission === false ? "Microphone access required" : recording ? "Stop recording" : "Start recording"}
+                    aria-label={recording ? "Stop recording" : "Start recording"}
                 >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                        className="w-6 h-6"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z"
-                        />
-                    </svg>
+                    {recording ? <FaMicrophoneSlash className="w-6 h-6" /> : <FaMicrophone className="w-6 h-6" />}
                 </button>
 
                 <input
-                    className="w-full placeholder:text-gray-800 placeholder:italic p-4 rounded-md bg-opacity-50 bg-white backdrop-blur-md"
+                    className="w-full py-3 px-4 rounded-full bg-white/90 backdrop-blur-md placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-md"
                     placeholder="Type a message..."
                     ref={inputRef}
                     onKeyDown={(e) => {
@@ -114,9 +230,14 @@ const ChatInterface = ({ onResponse }) => {
                 <button
                     disabled={loading}
                     onClick={sendMessage}
-                    className={`${loading ? 'bg-gray-400' : 'bg-gray-500 hover:bg-gray-600'} text-white p-4 px-10 font-semibold uppercase rounded-md`}
+                    className={`${
+                        loading 
+                            ? 'bg-gray-400' 
+                            : 'bg-blue-600 hover:bg-blue-700'
+                    } text-white p-3 rounded-full transition-all flex-shrink-0 shadow-md`}
+                    aria-label="Send message"
                 >
-                    {loading ? 'Sending...' : 'Send'}
+                    <IoSend className="w-6 h-6" />
                 </button>
             </div>
         </div>

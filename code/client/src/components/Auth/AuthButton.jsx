@@ -1,9 +1,16 @@
-import React from 'react'
+import React from 'react';
+import { motion } from 'framer-motion';
 
-const AuthButton = ({text, isDisabled}) => {
+const AuthButton = ({ text, isDisabled }) => {
   return (
-    <button type="submit" disabled={isDisabled} className='bg-primary my-2 w-full rounded-md text-white font-semibold text-lg p-2 disabled:opacity-60'>{text}</button>
-  )
-}
+    <motion.button 
+      type="submit" 
+      disabled={isDisabled} 
+      className='bg-primary my-2 w-full rounded-md text-white font-semibold text-lg p-3 disabled:opacity-60 shadow-md hover:shadow-lg transition-shadow'
+    >
+      {text}
+    </motion.button>
+  );
+};
 
-export default AuthButton
+export default AuthButton;

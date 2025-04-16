@@ -95,7 +95,7 @@ class EmilyAssistant:
 - messages: An array with exactly 3 message objects, each containing:
   - text: Part of the response (split across 3 messages)
   - facialExpression: One of: smile, sad, angry, surprised, funnyFace, default
-  - animation: One of: Idle, TalkingOne, TalkingThree, SadIdle, Defeated, Angry, Surprised, DismissingGesture, ThoughtfulHeadShake
+  - animation: One of: Acknowledging, Agreeing, Annoyed Head Shake, Bored, Crazy Gesture, Dismissing Gesture, Hands Forward Gesture, Thankful, Wiping Sweat, Sad Idle, Waving, Thoughtful Head Shake, Standing Idle
 - products: Array of relevant products from context
 
 IMPORTANT: Provide a natural conversation that DOESN'T always start with "Hi there" or generic greetings. Vary your responses based on the query context. Only use greeting phrases in your first message when appropriate for the query.
