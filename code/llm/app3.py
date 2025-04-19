@@ -14,14 +14,11 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_huggingface import HuggingFaceEmbeddings
 from functools import lru_cache
 
-# Environment variables - in production, use proper env management
+# Environment variables
 load_dotenv()
-
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-
-# Constants
-PINECONE_INDEX_NAME = "product-index1"
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME")
 
 # Pydantic models for API
 class ProductItem(BaseModel):
@@ -72,10 +69,10 @@ class EmilyAssistant:
         )
         print(f"Pinecone connection initialized in {time.time() - start_time:.2f} seconds")
 
-        # Create a retriever with reduced k for faster retrieval
+        # Retriever with reduced k for faster retrieval
         self.retriever = self.vectorstore.as_retriever(
             search_type="similarity",
-            search_kwargs={"k": 3}  # Reduced from 5 to 3 for faster retrieval
+            search_kwargs={"k": 5}
         )
 
         print("Initializing LLM connection...")
@@ -89,28 +86,32 @@ class EmilyAssistant:
         )
         print(f"LLM connection initialized in {time.time() - start_time:.2f} seconds")
 
-        # Define a streamlined prompt template
+        # Prompt template
         self.prompt_template = ChatPromptTemplate.from_messages([
             ("system", """You are Emily, a retail AI Assistant. Always respond with a JSON object that includes:
 - messages: An array with exactly 3 message objects, each containing:
   - text: Part of the response (split across 3 messages)
   - facialExpression: One of: smile, sad, angry, surprised, funnyFace, default
-  - animation: One of: Acknowledging, Agreeing, Annoyed Head Shake, Bored, Crazy Gesture, Dismissing Gesture, Hands Forward Gesture, Thankful, Wiping Sweat, Sad Idle, Waving, Thoughtful Head Shake, Standing Idle
+  - animation: One of: Talking, Dwarf Idle, Disappointed, Annoyed Head Shake, Acknowledging, Holding Idle, Head Nod Yes, Hard Head Nod, Happy Idle, Searching Pockets, Sarcastic Head Nod, Sad Idle, Neck Stretching, Look Around, Thoughtful Head Shake, Thoughtful Head Nod, Shaking Head No, Waving, Standing Idle
 - products: Array of relevant products from context
 
 IMPORTANT: Provide a natural conversation that DOESN'T always start with "Hi there" or generic greetings. Vary your responses based on the query context. Only use greeting phrases in your first message when appropriate for the query.
 
 IMPORTANT: Each product in the products array MUST include these fields:
-- name: The full product name (Brand + Model)
-- description: A detailed description of the product 
-- price: The product price (from MRP field)
+- name: full product name (Brand + Model)
+- description: A detailed description of the product
+- mrp: mrp price
+- discount: discount percentage
+- price: The final price (from Actual Price field)
+- stock: no of stocks
+- warrenty: warrenty years
 - category: The product category
-- img: The product image URL (from metadata)
+- img: The product image URL
 
 Message structure:
 1. First message: Context-appropriate opening (not always a greeting)
 2. Second message: Main information/answer
-3. Third message: Conclusion or follow-up
+3. Third message: Conclusion only no follow-up or question asked
 
 Context:
 {context}
@@ -119,7 +120,7 @@ Answer directly based only on context provided."""),
             ("human", "{question}")
         ])
 
-        # Set up the RAG chain
+        # RAG chain
         print("Setting up RAG chain...")
         start_time = time.time()
         self.rag_chain = (
@@ -134,7 +135,6 @@ Answer directly based only on context provided."""),
         print("Pre-warming the chain with a dummy query...")
         start_time = time.time()
         try:
-            # Use a simple query that won't tax the system too much but will initialize connections
             _ = self.rag_chain.invoke("show me a product")
             print(f"Chain pre-warmed in {time.time() - start_time:.2f} seconds")
         except Exception as e:
@@ -304,7 +304,7 @@ Discount: {product_dict['Discount']}"""
             print(f"Error adding product to index: {str(e)}")
             return False
 
-# Initialize FastAPI app with minimal metadata
+# Initialize FastAPI app
 app = FastAPI(
     title="Emily AI Retail Assistant API",
     on_startup=[lambda: print("FastAPI server starting...")]
@@ -349,7 +349,7 @@ async def add_product(product: ProductItem):
 @app.get("/")
 async def root():
     """Root endpoint"""
-    return {"message": "Emily AI Retail Assistant API"}
+    return {"status": 200,"message": "LLM API is working..."}
 
 if __name__ == "__main__":
     import uvicorn

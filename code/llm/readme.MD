@@ -2,12 +2,12 @@
 
 
 ```
-pip install fastapi pydantic typing json langchain_groq langchain_pinecone langchain_core langchain_community
+pip install -r requirements.txt.
 
 ```
 
 ## Run App.js
 
 ```markdown
-python app.py
+python app3.py
 ```
