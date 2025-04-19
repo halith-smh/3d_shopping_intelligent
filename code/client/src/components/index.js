@@ -7,3 +7,7 @@ export {default as AuthFooter} from './Auth/AuthFooter'
 
 
 export {default as Scenario} from './Home/Scenario'
+export {default as ChatInterface} from './Home/ChatInterface'
+export {default as ProductCarousel} from './Home/ProductCarousel'
+export {default as Model} from './Home/Model'
+export {default as SpeechProvider} from './Home/SpeechProvider'

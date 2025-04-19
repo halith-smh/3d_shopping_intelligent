@@ -4,7 +4,7 @@ import { useSpeech } from '../../hooks/useSpeech';
 
 const SpeechContext = createContext(null);
 
-export const SpeechProvider = ({ children }) => {
+const SpeechProvider = ({ children }) => {
   const speechService = useSpeech();
   
   return (
@@ -21,3 +21,5 @@ export const useSpeechContext = () => {
   }
   return context;
 };
+
+export default SpeechProvider;

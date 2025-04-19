@@ -88,7 +88,7 @@ const Register = () => {
         <BgImage>
           <div className="h-screen flex justify-center items-center">
             <motion.div 
-              className="bg-white w-full m-8 p-8 md:w-[500px] rounded-2xl shadow-xl"
+              className="bg-white w-full m-4 p-4 md:w-[500px] rounded-2xl shadow-xl"
               initial="hidden"
               animate="visible"
               variants={containerVariants}

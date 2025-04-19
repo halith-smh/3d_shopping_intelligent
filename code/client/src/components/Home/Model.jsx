@@ -7,7 +7,7 @@ import morphTargets from '../../utils/morphTargets';
 import facialExpressions from '../../utils/facialExpressions';
 import visemesMapping from '../../utils/visemesMapping';
 
-export function Model(props) {
+function Model(props) {
   const { nodes, materials } = useGLTF('/model/avatar2.glb');
   const { animations } = useGLTF("/model/animations2.glb");
 
@@ -450,3 +450,5 @@ export function Model(props) {
 
 useGLTF.preload('/model/avatar2.glb');
 useGLTF.preload('/model/animations2.glb');
+
+export default Model

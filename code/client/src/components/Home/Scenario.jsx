@@ -1,6 +1,6 @@
 import { CameraControls, Environment } from "@react-three/drei";
 import { useEffect, useRef } from "react";
-import { Model } from "./Model";
+import Model from "./Model";
 
 const Scenario = ({ messageQueue = [] }) => {
   const cameraControls = useRef();
