@@ -1,13 +1,13 @@
 import axios from "axios";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { LLM_URI } from "../utils/constants.js";
 import { lipSync } from "../modules/lip-sync.mjs";
+import { LLM_URI } from "../config/env.js";
 
 export const getResponse = async (req, res, next) => {
   const { query } = req.body;
 
   try {
-    const _getResponse = await axios.post(LLM_URI, { query: query });
+    const _getResponse = await axios.post(`${LLM_URI}/api/llm/response`, { query: query });
     console.log(_getResponse.data.messages);
     
     // console.log(_getResponse.data);
