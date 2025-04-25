@@ -11,6 +11,7 @@ import { MdClosedCaption, MdClosedCaptionDisabled } from 'react-icons/md';
 import { BgImage, ChatInterface, ProductCarousel, Scenario } from '../components';
 
 import axiosInstance from '../utils/axiosInstance';
+import { useLanguage } from '../utils/languageContext';
 
 const Home = () => {
     const nav = useNavigate();
@@ -130,6 +131,8 @@ const Home = () => {
         setShowProducts(false);
     };
 
+    const { language, handleLanguageChange } = useLanguage();
+
     return (
         <BgImage>
             <div className='p-0 m-0 h-screen w-screen overflow-hidden relative'>
@@ -150,6 +153,14 @@ const Home = () => {
                         >
                             {captionsEnabled ? <MdClosedCaption /> : <MdClosedCaptionDisabled />}
                         </button>
+                        <select
+                            value={language}
+                            onChange={(e) => handleLanguageChange(e.target.value)}
+                            className='bg-black/60 backdrop-blur-md rounded-md text-md p-1 text-white cursor-pointer hover:bg-opacity-80 transition-all'
+                        >
+                            <option value="en">English</option>
+                            <option value="ta">தமிழ்</option>
+                        </select>
                         <button
                             onClick={logOut}
                             title='Logout'
@@ -195,7 +206,7 @@ const Home = () => {
                     </AnimatePresence>
 
                     {/* Chat Interface */}
-                    <ChatInterface  onResponse={handleChatResponse} />
+                    <ChatInterface onResponse={handleChatResponse} />
                 </div>
             </div>
         </BgImage>

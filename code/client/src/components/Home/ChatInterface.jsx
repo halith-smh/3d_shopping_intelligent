@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
 import { IoClose, IoSend } from 'react-icons/io5';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../../utils/languageContext';
 
 
 const ChatInterface = ({ onResponse }) => {
@@ -15,6 +16,8 @@ const ChatInterface = ({ onResponse }) => {
     const [chatHistory, setChatHistory] = useState([]);
     const [showHistory, setShowHistory] = useState(false);
 
+    const { language } = useLanguage();
+
     // Fetch chat history on mount
     useEffect(() => {
         fetchChatHistory();
@@ -24,6 +27,17 @@ const ChatInterface = ({ onResponse }) => {
     useEffect(() => {
         checkMicrophonePermission();
     }, []);
+
+    useEffect(() => {
+        // Reinitialize speech recognition when language changes
+        if (recognitionRef.current) {
+            recognitionRef.current = null;
+        }
+        if (recording) {
+            // Stop any ongoing recording
+            setRecording(false);
+        }
+    }, [language]);
 
     const fetchChatHistory = async () => {
         try {
@@ -95,7 +109,7 @@ const ChatInterface = ({ onResponse }) => {
         // Configure recognition
         recognition.continuous = false;
         recognition.interimResults = true; // Get interim results for better feedback
-        recognition.lang = 'en-US';
+        recognition.lang = language === 'en' ? 'en-US' : 'ta-IN';
         recognition.maxAlternatives = 1;
 
         recognition.onstart = () => {
@@ -203,7 +217,10 @@ const ChatInterface = ({ onResponse }) => {
             // Send to backend
             const token = localStorage.getItem('token');
             const { data } = await axiosInstance.post('/api/v1/llm/get-response/',
-                { query: message },
+                {
+                    query: message,
+                    language: language === 'en' ? 'English' : language === 'ta' ? 'Tamil' : ''
+                },
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -260,7 +277,7 @@ const ChatInterface = ({ onResponse }) => {
             <motion.div
                 className={`fixed left-0 top-0 h-full bg-black/30 backdrop-blur-lg w-80 p-4 z-50 shadow-xl`}
                 initial={{ x: '-100%' }}
-                style={{zIndex: 999}}
+                style={{ zIndex: 999 }}
                 animate={{ x: showHistory ? 0 : '-100%' }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >

@@ -31,6 +31,7 @@ class ChatMessage(BaseModel):
 class LLMQueryRequest(BaseModel):
     query: str
     history: Optional[List[ChatMessage]] = []
+    language: str = "english"  # Default to english
 
 # Pydantic models for API
 class ProductItem(BaseModel):
@@ -50,9 +51,6 @@ class Message(BaseModel):
     text: str
     facialExpression: str
     animation: str
-
-class LLMQueryRequest(BaseModel):
-    query: str
 
 class LLMResponse(BaseModel):
     messages: List[Message]
@@ -99,39 +97,42 @@ class EmilyAssistant:
         print(f"LLM connection initialized in {time.time() - start_time:.2f} seconds")
 
         # Prompt template
+        # Update the prompt template in __init__ method
         self.prompt_template = ChatPromptTemplate.from_messages([
             ("system", """You are Emily, a retail AI Assistant. Always respond with a JSON object that includes:
-- messages: An array with exactly 3 message objects, each containing:
-  - text: Part of the response (split across 3 messages)
-  - facialExpression: One of: smile, sad, angry, surprised, funnyFace, default
-  - animation: One of: Talking, Dwarf Idle, Disappointed, Annoyed Head Shake, Acknowledging, Holding Idle, Head Nod Yes, Hard Head Nod, Happy Idle, Searching Pockets, Sarcastic Head Nod, Sad Idle, Neck Stretching, Look Around, Thoughtful Head Shake, Thoughtful Head Nod, Shaking Head No, Waving, Standing Idle
-- products: Array of relevant products from context
+        - messages: An array with exactly 3 message objects, each containing:
+        - text: Part of the response (split across 3 messages)
+        - facialExpression: One of: smile, sad, angry, surprised, funnyFace, default
+        - animation: One of: Talking, Dwarf Idle, Disappointed, Annoyed Head Shake, Acknowledging, Holding Idle, Head Nod Yes, Hard Head Nod, Happy Idle, Searching Pockets, Sarcastic Head Nod, Sad Idle, Neck Stretching, Look Around, Thoughtful Head Shake, Thoughtful Head Nod, Shaking Head No, Waving, Standing Idle
+        - products: Array of relevant products from context
 
-IMPORTANT: Provide a natural conversation that DOESN'T always start with "Hi there" or generic greetings. Vary your responses based on the query context. Only use greeting phrases in your first message when appropriate for the query.
+        IMPORTANT: Respond in the language specified by the user (currently: {language}).
 
-IMPORTANT: Each product in the products array MUST include these fields:
-- name: full product name (Brand + Model)
-- description: A detailed description of the product
-- mrp: mrp price
-- discount: discount percentage
-- price: The final price (from Actual Price field)
-- stock: no of stocks
-- warrenty: warrenty years
-- category: The product category
-- img: The product image URL
+        IMPORTANT: Provide a natural conversation that DOESN'T always start with "Hi there" or generic greetings. Vary your responses based on the query context. Only use greeting phrases in your first message when appropriate for the query.
 
-Message structure:
-1. First message: Context-appropriate opening (not always a greeting)
-2. Second message: Main information/answer
-3. Third message: Conclusion with follow-up question asked
+        IMPORTANT: Each product in the products array MUST include these fields:
+        - name: full product name (Brand + Model)
+        - description: A detailed description of the product
+        - mrp: mrp price
+        - discount: discount percentage
+        - price: The final price (from Actual Price field)
+        - stock: no of stocks
+        - warrenty: warrenty years
+        - category: The product category
+        - img: The product image URL
 
-Context:
-{context}
+        Message structure:
+        1. First message: Context-appropriate opening (not always a greeting)
+        2. Second message: Main information/answer
+        3. Third message: Conclusion with follow-up question asked
 
-Chat History:
-{history}
+        Context:
+        {context}
 
-Answer directly based on context provided and maintain conversation continuity with the chat history."""),
+        Chat History:
+        {history}
+
+        Answer directly based on context provided and maintain conversation continuity with the chat history."""),
             ("human", "{question}")
         ])
 
@@ -141,7 +142,8 @@ Answer directly based on context provided and maintain conversation continuity w
         {
             "context": RunnableLambda(lambda x: self.retriever.invoke(x["question"])),
             "question": RunnablePassthrough(),
-            "history": RunnablePassthrough()
+            "history": RunnablePassthrough(),
+            "language": RunnablePassthrough()
         }
         | self.prompt_template
         | self.llm
@@ -314,15 +316,17 @@ Answer directly based on context provided and maintain conversation continuity w
                 "products": []
             }
 
-    def get_response(self, query: str, history: List[ChatMessage] = None) -> Dict[str, Any]:
+    def get_response(self, query: str, history: List[ChatMessage] = None, language: str = "english") -> Dict[str, Any]:
         """Process the query with chat history and return a response"""
         try:
             # Ensure query is a string
             if not isinstance(query, str):
                 if isinstance(query, dict) and 'query' in query:
                     query = query['query']
+                    language = query.get('language', 'english')
                 elif isinstance(query, dict) and 'question' in query:
                     query = query['question']
+                    language = query.get('language', 'english')
                 else:
                     query = str(query)
             
@@ -338,16 +342,18 @@ Answer directly based on context provided and maintain conversation continuity w
             
             print(f"Query: {query}")
             print(f"Formatted history: {formatted_history}")
+            print(f"Language: {language}")
             
             # Make sure we're passing strings to the RAG chain
             response = self.rag_chain.invoke({
                 "question": query,
-                "history": formatted_history
+                "history": formatted_history,
+                "language": language
             })
             return response
         except Exception as e:
             print(f"Error in get_response: {str(e)}")
-            traceback.print_exc()  # Print full stack trace
+            traceback.print_exc()
             return {
                 "messages": [
                     {"text": "I'm sorry, I encountered an error processing your request.", "facialExpression": "sad", "animation": "Standing Idle"},
@@ -356,6 +362,7 @@ Answer directly based on context provided and maintain conversation continuity w
                 ],
                 "products": []
             }
+        
         
     def add_product_to_index(self, product: ProductItem) -> bool:
         """Add a product to the Pinecone index."""
@@ -420,20 +427,21 @@ async def get_llm_response(request: LLMQueryRequest):
     try:
         assistant = get_assistant()
         
-        # Extract the query string
+        # Extract the query string and language
         query = request.query
+        language = request.language.lower()  # Normalize to lowercase
         
         # Extract history if present
         history = getattr(request, 'history', None)
         
         # Debug information
-        print(f"Processing query: '{query}', History present: {history is not None}")
+        print(f"Processing query: '{query}', Language: {language}, History present: {history is not None}")
         if history:
             print(f"History type: {type(history)}, length: {len(history)}")
         
         # Generate a response with proper error handling
         try:
-            response = assistant.get_response(query, history)
+            response = assistant.get_response(query, history, language)
         except Exception as e:
             print(f"Error in assistant.get_response: {str(e)}")
             traceback.print_exc()
@@ -452,7 +460,7 @@ async def get_llm_response(request: LLMQueryRequest):
         print(f"Error processing query: {str(e)}")
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
-    
+   
 @app.post("/api/llm/addproduct", status_code=201)
 async def add_product(product: ProductItem):
     """Add a new product to the Pinecone index"""
