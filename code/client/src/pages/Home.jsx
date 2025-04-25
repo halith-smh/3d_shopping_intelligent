@@ -57,7 +57,7 @@ const Home = () => {
     }
 
     useEffect(() => {
-        // verifyHomePage();
+        verifyHomePage();
         // Cleanup function for timers
         return () => {
             if (captionTimerRef.current) {
@@ -137,7 +137,7 @@ const Home = () => {
                 <Leva collapsed />
 
                 {/* Header Controls */}
-                <div className='absolute top-0 left-0 right-0 z-50 flex justify-between items-center p-4'>
+                <div className='absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-4'>
                     <div className='bg-black/60 backdrop-blur-md rounded-md text-lg py-2 px-4 text-white cursor-pointer flex items-center gap-2'>
                         🤖 <span className='hidden sm:inline'>3D Shopping Intelligent</span>
                     </div>

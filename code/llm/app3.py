@@ -1,4 +1,6 @@
+import traceback
 from fastapi import FastAPI, HTTPException, Body
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import json
@@ -10,6 +12,7 @@ from langchain_groq import ChatGroq
 from langchain_pinecone import PineconeVectorStore
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import RunnableLambda
 # from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 from functools import lru_cache
@@ -19,6 +22,15 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME")
+
+# Add new model for chat history
+class ChatMessage(BaseModel):
+    role: str  # 'user' or 'assistant'
+    content: str
+
+class LLMQueryRequest(BaseModel):
+    query: str
+    history: Optional[List[ChatMessage]] = []
 
 # Pydantic models for API
 class ProductItem(BaseModel):
@@ -111,23 +123,29 @@ IMPORTANT: Each product in the products array MUST include these fields:
 Message structure:
 1. First message: Context-appropriate opening (not always a greeting)
 2. Second message: Main information/answer
-3. Third message: Conclusion only no follow-up or question asked
+3. Third message: Conclusion with follow-up question asked
 
 Context:
 {context}
 
-Answer directly based only on context provided."""),
+Chat History:
+{history}
+
+Answer directly based on context provided and maintain conversation continuity with the chat history."""),
             ("human", "{question}")
         ])
 
         # RAG chain
         print("Setting up RAG chain...")
-        start_time = time.time()
         self.rag_chain = (
-            {"context": self.retriever, "question": RunnablePassthrough()}
-            | self.prompt_template
-            | self.llm
-            | self._format_output
+        {
+            "context": RunnableLambda(lambda x: self.retriever.invoke(x["question"])),
+            "question": RunnablePassthrough(),
+            "history": RunnablePassthrough()
+        }
+        | self.prompt_template
+        | self.llm
+        | self._format_output
         )
         print(f"RAG chain setup completed in {time.time() - start_time:.2f} seconds")
         
@@ -159,7 +177,42 @@ Answer directly based only on context provided."""),
     def _get_cached_response(self, query_key: str):
         """Cache responses for common queries"""
         return self.rag_chain.invoke(query_key)
-
+    
+    def _format_chat_history(self, history):
+        """Format chat history into a string for the prompt."""
+        if not history:
+            return ""
+        
+        formatted_history = []
+        
+        try:
+            for msg in history:
+                # Handle different message formats
+                if isinstance(msg, dict):
+                    role = msg.get('role', '')
+                    content = msg.get('content', '')
+                elif hasattr(msg, 'role') and hasattr(msg, 'content'):
+                    # Pydantic model or similar object
+                    role = msg.role
+                    content = msg.content
+                else:
+                    # Try to convert to string as fallback
+                    try:
+                        content = str(msg)
+                        role = "unknown"
+                    except:
+                        continue
+                
+                # Format the message
+                user_role = "Customer" if role.lower() == "user" else "Emily"
+                formatted_history.append(f"{user_role}: {content}")
+        except Exception as e:
+            print(f"Error formatting history: {str(e)}")
+            traceback.print_exc()  # Print full stack trace
+            return ""  # Return empty string on error
+        
+        return "\n".join(formatted_history)
+    
     def _format_output(self, llm_output):
         """Format the LLM output into the required structured JSON format with complete product information."""
         try:
@@ -213,7 +266,7 @@ Answer directly based only on context provided."""),
                         messages.append({
                             "text": "Is there anything specific about these products you'd like to know?",
                             "facialExpression": "smile",
-                            "animation": "Idle"
+                            "animation": "Standing Idle"
                         })
                     
                     structured_response["messages"] = messages
@@ -245,7 +298,7 @@ Answer directly based only on context provided."""),
             structured_response["messages"] = [
                 {"text": part1, "facialExpression": "smile", "animation": "TalkingOne"},
                 {"text": part2, "facialExpression": "default", "animation": "TalkingThree"},
-                {"text": part3, "facialExpression": "smile", "animation": "Idle"}
+                {"text": part3, "facialExpression": "smile", "animation": "Standing Idle"}
             ]
             
             return structured_response
@@ -261,11 +314,49 @@ Answer directly based only on context provided."""),
                 "products": []
             }
 
-    def get_response(self, query: str) -> Dict[str, Any]:
-        """Process the query and return a response - with caching."""
-        # Use cached response if available
-        return self._get_cached_response(query)
-    
+    def get_response(self, query: str, history: List[ChatMessage] = None) -> Dict[str, Any]:
+        """Process the query with chat history and return a response"""
+        try:
+            # Ensure query is a string
+            if not isinstance(query, str):
+                if isinstance(query, dict) and 'query' in query:
+                    query = query['query']
+                elif isinstance(query, dict) and 'question' in query:
+                    query = query['question']
+                else:
+                    query = str(query)
+            
+            # Process and format history safely
+            formatted_history = ""
+            if history:
+                try:
+                    formatted_history = self._format_chat_history(history)
+                except Exception as e:
+                    print(f"Error formatting history: {str(e)}")
+                    traceback.print_exc()
+                    formatted_history = ""
+            
+            print(f"Query: {query}")
+            print(f"Formatted history: {formatted_history}")
+            
+            # Make sure we're passing strings to the RAG chain
+            response = self.rag_chain.invoke({
+                "question": query,
+                "history": formatted_history
+            })
+            return response
+        except Exception as e:
+            print(f"Error in get_response: {str(e)}")
+            traceback.print_exc()  # Print full stack trace
+            return {
+                "messages": [
+                    {"text": "I'm sorry, I encountered an error processing your request.", "facialExpression": "sad", "animation": "Standing Idle"},
+                    {"text": "Could you try asking your question in a different way?", "facialExpression": "default", "animation": "Standing Idle"},
+                    {"text": "I'm here to help with product information and shopping assistance.", "facialExpression": "smile", "animation": "Talking"}
+                ],
+                "products": []
+            }
+        
     def add_product_to_index(self, product: ProductItem) -> bool:
         """Add a product to the Pinecone index."""
         try:
@@ -319,20 +410,49 @@ print("EmilyAssistant singleton created and ready!")
 def get_assistant():
     return EMILY_ASSISTANT
 
+# class LLMQueryRequest(BaseModel):
+#     query: str
+#     history: Optional[List[Dict[str, str]]] = None  # Simplified - accept a list of dicts
+
 @app.post("/api/llm/response", response_model=LLMResponse)
 async def get_llm_response(request: LLMQueryRequest):
-    """Get a response from the LLM based on the user query"""
+    """Get a response from the LLM based on the user query and chat history"""
     try:
-        # Get the pre-initialized singleton
         assistant = get_assistant()
-        start_time = time.time()
-        response = assistant.get_response(request.query)
-        processing_time = time.time() - start_time
-        print(f"Query processed in {processing_time:.2f} seconds")
+        
+        # Extract the query string
+        query = request.query
+        
+        # Extract history if present
+        history = getattr(request, 'history', None)
+        
+        # Debug information
+        print(f"Processing query: '{query}', History present: {history is not None}")
+        if history:
+            print(f"History type: {type(history)}, length: {len(history)}")
+        
+        # Generate a response with proper error handling
+        try:
+            response = assistant.get_response(query, history)
+        except Exception as e:
+            print(f"Error in assistant.get_response: {str(e)}")
+            traceback.print_exc()
+            # Fallback response
+            response = {
+                "messages": [
+                    {"text": "I'm sorry, I encountered an error processing your request.", "facialExpression": "sad", "animation": "Sad Idle"},
+                    {"text": "Our systems are experiencing some issues right now.", "facialExpression": "default", "animation": "Idle"},
+                    {"text": "Please try again in a moment.", "facialExpression": "smile", "animation": "Talking"}
+                ],
+                "products": []
+            }
+        
         return response
     except Exception as e:
+        print(f"Error processing query: {str(e)}")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
-
+    
 @app.post("/api/llm/addproduct", status_code=201)
 async def add_product(product: ProductItem):
     """Add a new product to the Pinecone index"""
@@ -350,6 +470,15 @@ async def add_product(product: ProductItem):
 async def root():
     """Root endpoint"""
     return {"status": 200,"message": "LLM API is working..."}
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request, exc):
+    print(f"Unhandled exception: {str(exc)}")
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal server error: {str(exc)}"}
+    )
 
 if __name__ == "__main__":
     import uvicorn
