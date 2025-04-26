@@ -7,6 +7,8 @@ import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiUser, FiUserPlus } from 'react-icons/fi';
 import { RiUserAddLine } from 'react-icons/ri';
 import { containerVariants, itemVariants, SIGN_UP_URI } from '../utils/constants';
+import { useLanguage } from '../utils/languageContext';
+import text from '../lang/text';
 
 const Register = () => {
   const nav = useNavigate();
@@ -61,6 +63,8 @@ const Register = () => {
     }
   };
 
+  const {language} = useLanguage()
+
   return (
     <>
       {!isToken && (
@@ -76,7 +80,7 @@ const Register = () => {
                 <div className="flex justify-center mb-6">
                   <RiUserAddLine className="text-primary text-6xl" />
                 </div>
-                <AuthHeader title="Create Account" p="Already have an account?" span="Log In" to="/login" />
+                <AuthHeader title={text[language].new_account} p={text[language].ex_account} span={text[language].login} to="/login" />
               </motion.div>
               
               <form onSubmit={handleFormSubmit}>
@@ -126,7 +130,7 @@ const Register = () => {
                 </motion.div>
                 
                 <motion.div variants={itemVariants}>
-                  <AuthFooter />
+                  <AuthFooter text={text}  language={language} />
                 </motion.div>
                 
                 <motion.div 
@@ -140,7 +144,7 @@ const Register = () => {
                     text={
                       <div className="flex items-center justify-center gap-2">
                         <FiUserPlus className="text-lg" />
-                        <span>Sign Up</span>
+                        <span>{text[language].sign_up}</span>
                       </div>
                     } 
                   />

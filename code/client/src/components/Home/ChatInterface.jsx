@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { useLanguage } from '../../utils/languageContext';
 import Avatar from '../../assets/images/avatar.png'
 import { CLEAR_CHAT_HISTORY_URI, GET_CHAT_HISTORY_URI, POST_CHAT_MESSAGE_URI } from '../../utils/constants';
+import text from '../../lang/text';
 
 const ChatInterface = ({ onResponse }) => {
     const [loading, setLoading] = useState(false);
@@ -294,7 +295,7 @@ const ChatInterface = ({ onResponse }) => {
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-white text-lg font-semibold">Chat History</h3>
+                    <h3 className="text-white text-lg font-semibold">{text[language].chat_history}</h3>
                     <button
                         onClick={() => setShowHistory(false)}
                         className="text-white hover:text-gray-300"
@@ -345,7 +346,7 @@ const ChatInterface = ({ onResponse }) => {
                             <svg className="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                             </svg>
-                            <p className="text-sm">No messages yet</p>
+                            <p className="text-sm">{text[language].no_msg}</p>
                         </div>
                     )}
                 </div>
@@ -354,7 +355,7 @@ const ChatInterface = ({ onResponse }) => {
                     onClick={clearChatHistory}
                     className="w-full py-2 mt-4 bg-red-500/100 hover:bg-red-500/80 text-white rounded-lg transition-all"
                 >
-                    Clear History
+                    {text[language].clr_history}
                 </button>
             </motion.div>
 
@@ -364,7 +365,7 @@ const ChatInterface = ({ onResponse }) => {
                     <button
                         onClick={() => setShowHistory(!showHistory)}
                         className="p-2 text-white hover:bg-white/10 rounded-full"
-                        title="Chat History"
+                        title={text[language].chat_history}
                     >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-5 10h5m-5 4h5M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -380,15 +381,15 @@ const ChatInterface = ({ onResponse }) => {
                                 : 'bg-gray-700 hover:bg-gray-800'
                             } text-white p-3 rounded-full transition-all flex-shrink-0 shadow-md`}
                         disabled={micPermission === false}
-                        title={micPermission === false ? "Microphone access required" : recording ? "Stop recording" : "Start recording"}
-                        aria-label={recording ? "Stop recording" : "Start recording"}
+                        title={micPermission === false ? "Microphone access required" : recording ? text[language].stop_rec : text[language].start_rec}
+                        aria-label={recording ? text[language].stop_rec : text[language].start_rec}
                     >
                         {recording ? <FaMicrophoneSlash className="w-6 h-6" /> : <FaMicrophone className="w-6 h-6" />}
                     </button>
 
                     <input
                         className="w-full py-3 px-4 rounded-full bg-white/90 backdrop-blur-md placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-md"
-                        placeholder="Type a message..."
+                        placeholder={text[language].type_msg}
                         ref={inputRef}
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {

@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
-const AuthFooter = () => {
+const AuthFooter = ({ language, text }) => {
   return (
     <div className='my-3 flex items-center'>
       <motion.input
@@ -12,11 +12,11 @@ const AuthFooter = () => {
         className="w-4 h-4 accent-primary mr-2"
       />
       <span className='text-light'>
-        I accept the <motion.span
+        {text[language].accept_terms} <motion.span
           className='text-primary font-medium hover:underline underline-offset-2 cursor-pointer'
           whileHover={{ scale: 1.05 }}
         >
-          <Link to="/terms-and-conditions">Terms & Conditions</Link>
+          <Link to="/terms-and-conditions">{text[language].terms_conditions}</Link>
         </motion.span>
       </span>
     </div>

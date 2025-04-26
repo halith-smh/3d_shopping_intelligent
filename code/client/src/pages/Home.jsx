@@ -13,6 +13,7 @@ import { BgImage, ChatInterface, ProductCarousel, Scenario } from '../components
 import axiosInstance from '../utils/axiosInstance';
 import { useLanguage } from '../utils/languageContext';
 import { HOME_URI } from '../utils/constants';
+import text from '../lang/text';
 
 const Home = () => {
     const nav = useNavigate();
@@ -69,7 +70,7 @@ const Home = () => {
 
     const toggleCaptions = () => {
         setCaptionsEnabled(!captionsEnabled);
-        toast.success(captionsEnabled ? 'Captions disabled' : 'Captions enabled');
+        toast.success(captionsEnabled ? text[language].dis_caption : text[language].en_caption);
     }
 
     // Process captions one at a time
@@ -142,13 +143,13 @@ const Home = () => {
                 {/* Header Controls */}
                 <div className='absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-4'>
                     <div className='bg-black/60 backdrop-blur-md rounded-md text-lg py-2 px-4 text-white cursor-pointer flex items-center gap-2'>
-                        🤖 <span className='hidden sm:inline'>3D Shopping Intelligent</span>
+                        🤖 <span className='hidden sm:inline'>{text[language].app_name}</span>
                     </div>
 
                     <div className='flex gap-2'>
                         <button
                             onClick={toggleCaptions}
-                            title={captionsEnabled ? 'Disable Captions' : 'Enable Captions'}
+                            title={captionsEnabled ? text[language].dis_caption : text[language].en_caption}
                             className={`rounded-md text-xl p-2 text-white cursor-pointer transition-all ${captionsEnabled ? 'bg-blue-600 shadow-lg' : 'bg-black/60 backdrop-blur-md'}`}
                         >
                             {captionsEnabled ? <MdClosedCaption /> : <MdClosedCaptionDisabled />}
@@ -163,7 +164,7 @@ const Home = () => {
                         </select>
                         <button
                             onClick={logOut}
-                            title='Logout'
+                            title={text[language].logout}
                             className='bg-black/60 backdrop-blur-md rounded-md text-xl p-2 text-white cursor-pointer hover:bg-opacity-80 transition-all'
                         >
                             <TbLogout />

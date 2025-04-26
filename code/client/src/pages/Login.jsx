@@ -7,6 +7,8 @@ import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiLogIn } from 'react-icons/fi';
 import { RiLoginCircleLine } from 'react-icons/ri';
 import { containerVariants, itemVariants, SIGN_IN_URI } from '../utils/constants';
+import text from '../lang/text';
+import { useLanguage } from '../utils/languageContext';
 
 const Login = () => {
   const nav = useNavigate();
@@ -60,6 +62,7 @@ const Login = () => {
     }
   }
 
+  const {language} = useLanguage();
   return (
     <>
       {!isToken && (
@@ -75,7 +78,7 @@ const Login = () => {
                 <div className="flex justify-center mb-6">
                   <RiLoginCircleLine className="text-primary text-6xl" />
                 </div>
-                <AuthHeader title="Welcome Back" p="Don't have an account?" span="Sign Up" to="/sign-up" />
+                <AuthHeader title={text[language].welcome_back} p={text[language].no_account} span={text[language].sign_up} to="/sign-up" />
               </motion.div>
               
               <form onSubmit={handleFormSubmit}>
@@ -127,7 +130,7 @@ const Login = () => {
                     text={
                       <div className="flex items-center justify-center gap-2">
                         <FiLogIn className="text-lg" />
-                        <span>Log In</span>
+                        <span>{text[language].login}</span>
                       </div>
                     } 
                   />
