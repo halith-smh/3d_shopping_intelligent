@@ -12,12 +12,12 @@ import { BgImage, ChatInterface, ProductCarousel, Scenario } from '../components
 
 import axiosInstance from '../utils/axiosInstance';
 import { useLanguage } from '../utils/languageContext';
+import { HOME_URI } from '../utils/constants';
 
 const Home = () => {
     const nav = useNavigate();
-    const [isVerified, setIsVerified] = useState(false);
     const [messageQueue, setMessageQueue] = useState([]);
-    const [captionsEnabled, setCaptionsEnabled] = useState(true); //Enable captions by default
+    const [captionsEnabled, setCaptionsEnabled] = useState(true);
     const [currentCaption, setCurrentCaption] = useState('');
     const [showCaption, setShowCaption] = useState(false);
     const [products, setProducts] = useState([]);
@@ -31,7 +31,7 @@ const Home = () => {
         if (!token) return nav('/login');
 
         try {
-            const { data } = await axiosInstance.get('/api/v1/user/home', {
+            const { data } = await axiosInstance.get(HOME_URI, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             console.log(data);

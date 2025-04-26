@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiLogIn } from 'react-icons/fi';
 import { RiLoginCircleLine } from 'react-icons/ri';
+import { containerVariants, itemVariants, SIGN_IN_URI } from '../utils/constants';
 
 const Login = () => {
   const nav = useNavigate();
@@ -39,7 +40,7 @@ const Login = () => {
 
     const SignInloader = toast.loading('Loading...');
     try {
-      const response = await axiosInstance.post("/api/v1/auth/sign-in", user);
+      const response = await axiosInstance.post(SIGN_IN_URI, user);
       if (response.status === 200) {
         toast.dismiss(SignInloader);
         toast.success(response.data.message);
@@ -58,28 +59,6 @@ const Login = () => {
       else toast.error(error.message);
     }
   }
-
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { 
-        duration: 0.5,
-        when: "beforeChildren",
-        staggerChildren: 0.2
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { 
-      y: 0, 
-      opacity: 1,
-      transition: { duration: 0.5 }
-    }
-  };
 
   return (
     <>

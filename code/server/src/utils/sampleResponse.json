@@ -662,6 +662,6 @@
             }
         ]
     },
-    "message": "LLm response for the user query: I am looking for Apple products.",
+    "message": "Test Response",
     "success": true
 }

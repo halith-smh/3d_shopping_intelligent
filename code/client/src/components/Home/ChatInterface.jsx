@@ -5,7 +5,8 @@ import { FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
 import { IoClose, IoSend } from 'react-icons/io5';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../../utils/languageContext';
-
+import Avatar from '../../assets/images/avatar.png'
+import { CLEAR_CHAT_HISTORY_URI, GET_CHAT_HISTORY_URI, POST_CHAT_MESSAGE_URI } from '../../utils/constants';
 
 const ChatInterface = ({ onResponse }) => {
     const [loading, setLoading] = useState(false);
@@ -15,6 +16,7 @@ const ChatInterface = ({ onResponse }) => {
     const [micPermission, setMicPermission] = useState(null);
     const [chatHistory, setChatHistory] = useState([]);
     const [showHistory, setShowHistory] = useState(false);
+    const loadingToastIdRef = useRef(null); // Ref to track the loading toast ID
 
     const { language } = useLanguage();
 
@@ -23,7 +25,7 @@ const ChatInterface = ({ onResponse }) => {
         fetchChatHistory();
     }, []);
 
-    // Check for microphone permission on component mount
+    // Check for microphone permission
     useEffect(() => {
         checkMicrophonePermission();
     }, []);
@@ -42,7 +44,7 @@ const ChatInterface = ({ onResponse }) => {
     const fetchChatHistory = async () => {
         try {
             const token = localStorage.getItem('token');
-            const { data } = await axiosInstance.get('/api/v1/llm/chat-history', {
+            const { data } = await axiosInstance.get(GET_CHAT_HISTORY_URI, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
@@ -59,7 +61,7 @@ const ChatInterface = ({ onResponse }) => {
     const clearChatHistory = async () => {
         try {
             const token = localStorage.getItem('token');
-            const { data } = await axiosInstance.post('/api/v1/llm/clear-history', {}, {
+            const { data } = await axiosInstance.post(CLEAR_CHAT_HISTORY_URI, {}, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
@@ -89,7 +91,7 @@ const ChatInterface = ({ onResponse }) => {
         }
     };
 
-    // Initialize speech recognition (keeping your existing code)
+    // Initialize speech recognition
     const initSpeechRecognition = () => {
         // Check browser compatibility
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -159,10 +161,11 @@ const ChatInterface = ({ onResponse }) => {
 
         recognition.onend = () => {
             setRecording(false);
-            // Only auto-send if there's actual text and it was successful
-            if (inputRef.current?.value.trim() && micPermission !== false) {
-                sendMessage();
-            }
+            // Removed auto-send functionality - now just fills the input field
+            toast('Speech recognized. Review and send when ready.', {
+                icon: '✓',
+                duration: 2000
+            });
         };
 
         recognitionRef.current = recognition;
@@ -179,7 +182,6 @@ const ChatInterface = ({ onResponse }) => {
             return;
         }
 
-        // If mic permission is unknown, check it first
         if (micPermission === null) {
             await checkMicrophonePermission();
         }
@@ -199,24 +201,25 @@ const ChatInterface = ({ onResponse }) => {
         }
     };
 
-
     const sendMessage = async () => {
         const message = inputRef.current.value.trim();
         if (!message || loading) return;
 
         try {
             setLoading(true);
+            // Show loading toast
+            loadingToastIdRef.current = toast.loading('Sending  message...', {
+                position: 'top-center',
+            });
 
             // Clear input
             inputRef.current.value = '';
 
-            // Update chat history UI immediately for better UX
             const updatedHistory = [...chatHistory, { role: 'user', content: message }];
             setChatHistory(updatedHistory);
 
-            // Send to backend
             const token = localStorage.getItem('token');
-            const { data } = await axiosInstance.post('/api/v1/llm/get-response/',
+            const { data } = await axiosInstance.post(POST_CHAT_MESSAGE_URI,
                 {
                     query: message,
                     language: language === 'en' ? 'English' : language === 'ta' ? 'Tamil' : ''
@@ -228,46 +231,55 @@ const ChatInterface = ({ onResponse }) => {
                 }
             );
 
-            // Process response
             if (data.statusCode === 200) {
-                // Format messages to ensure they have the required properties
                 const formattedMessages = (data.data.messages || []).filter(msg => msg).map(msg => {
-                    // Ensure each message has at least a text property
                     return {
                         ...msg,
                         text: msg.text || msg.content || message,
-                        // Add a default lipsync duration if not provided
                         lipsync: msg.lipsync || { metadata: { duration: 5 } }
                     };
                 });
 
-                // Format products data if available
                 const formattedProducts = (data.data.products || []).filter(p => p).map(product => {
                     return {
                         ...product,
-                        // Ensure price is a number
                         price: typeof product.price === 'number' ? product.price :
                             typeof product.price === 'string' ? parseInt(product.price, 10) || 10000 : 10000
                     };
                 });
 
-                // Update chat history with assistant's response
                 if (formattedMessages.length > 0) {
                     const assistantMessage = formattedMessages.map(msg => msg.text).join(' ');
                     const newHistory = [...updatedHistory, { role: 'assistant', content: assistantMessage }];
                     setChatHistory(newHistory);
                 }
 
-                // Pass responses to parent component to control the 3D model and products
                 if (onResponse) {
                     onResponse(formattedMessages, formattedProducts);
+                }
+                
+                // Show success toast when message sent successfully
+                if (loadingToastIdRef.current) {
+                    toast.success('Message Received ', { id: loadingToastIdRef.current });
+                    loadingToastIdRef.current = null;
                 }
             }
         } catch (error) {
             console.error('Error sending message:', error);
-            toast.error('Failed to send message');
+            // Show error toast if sending fails
+            if (loadingToastIdRef.current) {
+                toast.error('Failed to send message', { id: loadingToastIdRef.current });
+                loadingToastIdRef.current = null;
+            } else {
+                toast.error('Failed to send message');
+            }
         } finally {
             setLoading(false);
+            // If for some reason the toast wasn't dismissed, dismiss it now
+            if (loadingToastIdRef.current) {
+                toast.dismiss(loadingToastIdRef.current);
+                loadingToastIdRef.current = null;
+            }
         }
     };
 
@@ -291,42 +303,60 @@ const ChatInterface = ({ onResponse }) => {
                     </button>
                 </div>
 
-                <div className="h-[calc(100vh-120px)] overflow-y-auto pr-2">
+                <div className="h-[calc(100vh-120px)] overflow-y-auto pr-2 space-y-3 py-4">
                     {chatHistory.map((msg, idx) => (
                         <div
                             key={idx}
-                            className={`p-3 mb-2 rounded-lg ${msg.role === 'user'
-                                ? 'bg-blue-500/20'
-                                : 'bg-green-500/20'
-                                }`}
+                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                            <p className="text-white text-sm">{msg.content}</p>
-                            <span className="text-xs text-gray-400 mt-1 block">
-                                {msg.role === 'user' ? 'You' : 'Emily'}
-                            </span>
+                            <div
+                                className={`max-w-[85%] rounded-lg shadow-md ${msg.role === 'user'
+                                    ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white'
+                                    : 'bg-slate-800 text-white'
+                                    } relative`}
+                            >
+                                <div className="p-3 pb-7">
+                                    <p className="text-sm whitespace-pre-line">
+                                        {msg.content
+                                            .replace(/\./g, '.\n\n')  // Add a newline after each period
+                                            .replace(/\n+/g, '\n\n')  // Replace multiple newlines with single newline
+                                            .replace(/\n\s+/g, '\n\n') // Clean up spaces after newlines
+                                        }
+                                    </p>
+                                </div>
+                                <div className={`absolute bottom-1 ${msg.role === 'user' ? 'right-2' : 'left-2'} flex items-center`}>
+                                    {msg.role !== 'user' && (
+                                        <div className="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-xs font-medium mr-1">
+                                            {/* E */}
+                                            <img src={Avatar} className='rounded-md' alt="" />
+                                        </div>
+                                    )}
+                                    <span className="text-xs opacity-70">
+                                        {msg.role === 'user' ? 'You' : 'Emily'}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     ))}
+
+                    {/* Empty state */}
+                    {chatHistory.length === 0 && (
+                        <div className="flex flex-col items-center justify-center h-full text-white font-bold">
+                            <svg className="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            <p className="text-sm">No messages yet</p>
+                        </div>
+                    )}
                 </div>
 
                 <button
                     onClick={clearChatHistory}
-                    className="w-full py-2 mt-4 bg-red-500/30 hover:bg-red-500/40 text-white rounded-lg transition-all"
+                    className="w-full py-2 mt-4 bg-red-500/100 hover:bg-red-500/80 text-white rounded-lg transition-all"
                 >
                     Clear History
                 </button>
             </motion.div>
-
-            {/* Chat History Display */}
-            {/* {showHistory && chatHistory.length > 0 && (
-                <div className="mb-4 max-h-60 overflow-y-auto bg-black/40 rounded-lg p-3">
-                    {chatHistory.map((msg, idx) => (
-                        <div key={idx} className={`mb-2 ${msg.role === 'user' ? 'text-blue-300' : 'text-green-300'}`}>
-                            <span className="font-bold">{msg.role === 'user' ? 'You: ' : 'Assistant: '}</span>
-                            <span>{msg.content}</span>
-                        </div>
-                    ))}
-                </div>
-            )} */}
 
             {/* Input Area */}
             <div className="bg-black/30 backdrop-blur-lg p-4">
@@ -381,7 +411,6 @@ const ChatInterface = ({ onResponse }) => {
                 </div>
             </div>
         </div>
-
     );
 };
 

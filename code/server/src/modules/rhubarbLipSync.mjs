@@ -1,14 +1,14 @@
+import { REHUBARB_PATH } from "../config/env.js";
 import { execCommand } from "../utils/files.mjs";
 
-const rhubarbPath = "D:/Acedamics/Sem_8/Repo/3d_shopping_intelligent/code/server/bin/rhubarb.exe";
+const rhubarbPath = REHUBARB_PATH;
 
 const getPhonemes = async ({ message }) => {
   try {
     const time = new Date().getTime();
     console.log(`Starting conversion for message ${message}`);
     await execCommand(
-      { command: `ffmpeg -y -i audios/message_${message}.mp3 audios/message_${message}.wav` }
-      // -y to overwrite the file
+      { command: `ffmpeg -y -i audios/message_${message}.mp3 audios/message_${message}.wav` } // -y to overwrite the file
     );
     console.log(`Conversion done in ${new Date().getTime() - time}ms`);
     await execCommand({

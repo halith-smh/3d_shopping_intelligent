@@ -4,13 +4,13 @@ import { lipSync } from "../modules/lip-sync.mjs";
 import { LLM_URI } from "../config/env.js";
 import { ChatHistory } from "../models/chatHistory.js";
 
+// Get LLM Response
 export const getResponse = async (req, res, next) => {
   const { query, language } = req.body;
   const userId = req.user._id;
   console.log(language);
 
   try {
-    // Step 1: Retrieve existing chat history
     let chatHistory = await ChatHistory.findOne({ userId });
     if (!chatHistory) {
       chatHistory = new ChatHistory({ userId, messages: [] });
@@ -20,8 +20,7 @@ export const getResponse = async (req, res, next) => {
     chatHistory.messages.push({ role: "user", content: query });
     await chatHistory.save();
 
-    // Step 2: Format history for LLM API and make the request
-    // This is the key fix - we need to pass the history in the format the LLM expects
+    // History in the format the LLM expects
     const formattedHistory = chatHistory.messages.map((msg) => ({
       role: msg.role,
       content: msg.content,
@@ -33,14 +32,11 @@ export const getResponse = async (req, res, next) => {
       history: formattedHistory, // Include the formatted history
     });
 
-    // Step 3: Process response and save assistant message
     if (_getResponse.data.messages && _getResponse.data.messages.length > 0) {
-      // Combine all message texts into one entry for history
       const assistantResponse = _getResponse.data.messages
         .map((msg) => msg.text)
         .join(" ");
 
-      // Add to chat history
       chatHistory.messages.push({
         role: "assistant",
         content: assistantResponse,
@@ -53,7 +49,6 @@ export const getResponse = async (req, res, next) => {
 
     // Process lip sync
     const _lipSync = await lipSync({ messages: _getResponse.data.messages });
-    // console.log(_lipSync);
 
     // Send response to client
     res.send(
@@ -69,7 +64,7 @@ export const getResponse = async (req, res, next) => {
   }
 };
 
-// New endpoint to fetch chat history
+// Fetch chat history
 export const getChatHistory = async (req, res, next) => {
   const userId = req.user._id;
 
@@ -93,7 +88,7 @@ export const getChatHistory = async (req, res, next) => {
   }
 };
 
-// Endpoint to clear chat history
+// Clear chat history
 export const clearChatHistory = async (req, res, next) => {
   const userId = req.user._id;
 

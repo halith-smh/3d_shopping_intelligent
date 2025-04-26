@@ -5,7 +5,8 @@
   "description": "Server Code",
   "main": "server.js",
   "scripts": {
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "start": "node server.js "
   },
   "author": "",
   "license": "MIT",
@@ -19,6 +20,7 @@
     "dotenv": "^16.4.7",
     "elevenlabs-node": "^2.0.3",
     "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",

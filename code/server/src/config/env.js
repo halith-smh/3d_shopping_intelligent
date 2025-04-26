@@ -11,5 +11,6 @@ export const {
   ELEVEN_LABS_API_KEY,
   ELEVEN_LABS_VOICE_ID,
   ELEVEN_LABS_MODEL_ID,
-  LLM_URI
+  LLM_URI,
+  REHUBARB_PATH
 } = process.env;

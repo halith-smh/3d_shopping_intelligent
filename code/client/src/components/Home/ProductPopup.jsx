@@ -57,7 +57,7 @@ const ProductPopup = ({ product, onClose, isOpen }) => {
           </div>
         )}
         
-        {/* Close button - Made more visible */}
+        {/* Close button */}
         <button
           onClick={onClose}
           className="absolute top-3 right-3 z-20 bg-black/80 hover:bg-black text-white p-2 rounded-full transition-all shadow-lg"
@@ -118,8 +118,6 @@ const ProductPopup = ({ product, onClose, isOpen }) => {
               )}
             </div>
           </div>
-          
-          {/* Action buttons removed as requested */}
         </div>
       </motion.div>
     </div>

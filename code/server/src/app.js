@@ -3,6 +3,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import rateLimit from "express-rate-limit";
 import { ApiResponse } from "./utils/ApiResponse.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 
@@ -19,7 +20,7 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
 app.use(cookieParser());
-app.use(morgan(NODE_ENV));
+app.use(morgan(NODE_ENV === 'production'? 'combined' : 'dev'));
 app.use(
   cors({
     origin: CLIENT_URI,
@@ -27,7 +28,10 @@ app.use(
     credentials: true,
   })
 );
-// - Rate Limiting : production env
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000, // 15min
+  max: 100
+}));
 
 // App Routes
 app.use("/api/v1/auth", authRouter);
@@ -37,18 +41,17 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/llm", llmRouter);
 
 app.get("/", (req, res) => {
-  res.json(new ApiResponse(200, { status: "active", log: new Date() }, "Backend server is running properly"));
+  res.json(new ApiResponse(200, { status: "active" }, "Server operational"));
 });
 
 app.get("/health", async (req, res) => {
   try {
     const verifyLLM = await fetch(LLM_URI);
     if (verifyLLM.status == 200) {
-      const response = await verifyLLM.json();
-      return res.json(new ApiResponse(200, { Node_status: "active", LLM_status: 'active', LLM_Response: response, log: new Date() }, "Servers are running properly"));
+      return res.status(200).json(new ApiResponse(200, { node_status: "active", llm_status: 'active' }, "Health check completed"));
     }
   } catch (error) {
-    return res.json(new ApiResponse(500, { Node_status: "active", LLM_status: 'in_active', log: new Date() }, "LLM server is not running properly"));
+    return res.status(500).json(new ApiResponse(500, { node_status: "active", llm_status: 'inactive'}, "Health check failed"));
   }
 });
 

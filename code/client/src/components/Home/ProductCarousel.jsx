@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { IoClose } from 'react-icons/io5';
 import { motion, AnimatePresence } from 'framer-motion';
-import ProductPopup from './ProductPopup'; // Import the fixed component
+import ProductPopup from './ProductPopup';
 
 const ProductCarousel = ({ products, onClose }) => {
   if (!products || products.length === 0) return null;
@@ -54,10 +54,9 @@ const ProductCarousel = ({ products, onClose }) => {
       <motion.div
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="bg-white/15 backdrop-blur-lg px-3 py-2 overflow-hidden relative"
+        className="px-3 py-2 overflow-hidden relative"
       >
         <div className="flex items-center justify-between mb-1 max-w-3xl mx-auto">
-          <h2 className="text-[#682f11] font-medium text-sm">.</h2>
           <button
             onClick={onClose}
             className="text-white bg-black/30 hover:bg-black/50 p-1 rounded-full transition-all"
@@ -65,6 +64,7 @@ const ProductCarousel = ({ products, onClose }) => {
           >
             <IoClose size={16} />
           </button>
+          <h2 className="text-[#682f11] font-medium text-sm"></h2>
         </div>
 
         <div className="flex gap-3 pb-1 overflow-x-auto max-w-3xl mx-auto scrollbar-hide">
@@ -128,7 +128,7 @@ const ProductCarousel = ({ products, onClose }) => {
         </div>
       </motion.div>
 
-      {/* Product popup rendered at the root level with improved outside click detection */}
+      {/* Product popup */}
       <AnimatePresence>
         {selectedProduct && (
           <ProductPopup 

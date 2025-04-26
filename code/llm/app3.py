@@ -55,6 +55,11 @@ class Message(BaseModel):
 class LLMResponse(BaseModel):
     messages: List[Message]
     products: List[Dict[str, Any]]
+    
+class ProductResponse(BaseModel):
+    status: str
+    message: Optional[str] = None
+    data: Optional[Any] = None
 
 # Pre-initialize embedding model at module level to ensure it's loaded once
 print("Pre-loading HuggingFace embedding model...")
@@ -473,6 +478,53 @@ async def add_product(product: ProductItem):
             raise HTTPException(status_code=500, detail="Failed to add product")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+# Get all products from pinecone
+@app.get("/products/", response_model=ProductResponse)
+async def get_products(
+    brand: Optional[str] = None,
+    category: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None
+):
+    try:
+        # Build filter
+        filter_dict = {}
+        if brand:
+            filter_dict["brand"] = {"$eq": brand}
+        if category:
+            filter_dict["category"] = {"$eq": category}
+        if min_price is not None:
+            filter_dict["MRP"] = {"$gte": min_price}
+        if max_price is not None:
+            if "MRP" in filter_dict:
+                filter_dict["MRP"]["$lte"] = max_price
+            else:
+                filter_dict["MRP"] = {"$lte": max_price}
+        
+        # Query Pinecone
+        query_vector = [0.0] * 384  # Dummy vector for metadata search
+        results = index.query(
+            vector=query_vector,
+            filter=filter_dict if filter_dict else None,
+            top_k=100,
+            include_metadata=True
+        )
+        
+        # Format results
+        products = []
+        for match in results.matches:
+            product = match.metadata if hasattr(match, "metadata") else {}
+            product["id"] = match.id
+            products.append(product)
+        
+        return {
+            "status": "success",
+            "data": {"products": products, "count": len(products)}
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/")
 async def root():
