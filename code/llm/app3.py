@@ -111,8 +111,7 @@ class EmilyAssistant:
         - animation: One of: Talking, Dwarf Idle, Disappointed, Annoyed Head Shake, Acknowledging, Holding Idle, Head Nod Yes, Hard Head Nod, Happy Idle, Searching Pockets, Sarcastic Head Nod, Sad Idle, Neck Stretching, Look Around, Thoughtful Head Shake, Thoughtful Head Nod, Shaking Head No, Waving, Standing Idle
         - products: Array of relevant products from context
 
-        IMPORTANT: Respond in the language specified by the user (currently: {language}).
-
+        IMPORTANT: You MUST respond in {language} language only for all text messages.
         IMPORTANT: Provide a natural conversation that DOESN'T always start with "Hi there" or generic greetings. Vary your responses based on the query context. Only use greeting phrases in your first message when appropriate for the query.
 
         IMPORTANT: Each product in the products array MUST include these fields:
