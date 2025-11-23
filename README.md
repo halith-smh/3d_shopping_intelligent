@@ -1,4 +1,4 @@
-# 3DShoppingIntelligent
+# 3D Shopping Intelligent
 
 A next-generation 3D shopping experience powered by intelligent design and interactive interfaces.
 
